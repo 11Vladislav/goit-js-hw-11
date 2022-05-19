@@ -15,12 +15,17 @@
   <body>
     <div class="search-block">
       <form class="search-form" id="search-form">
-        <input type="text" name="searchQuery" autocomplete="off" placeholder="Search images..." />
-        <button type="submit">Search</button>
+        <input type="text" name="query" id="searchQuery" autocomplete="off" placeholder="Search images..." />
+        <button type="submit" class="search-btn">Search</button>
       </form>
     </div>
-        <div class="gallery"></div>
-     <button type="button" class="load-more visually-hidden">Load more</button>
+        <div class="gallery" id="gallery"></div>
+     <button type="button" class="load-more is-hidden" id="load-more">Load more</button>
+    <div class="loading-container hidden">
+      <div class="spinner"></div>
+      <div class="spinner-center"></div>
+      <div class="loading-text">Loading...</div>
+    </div>
     <script src="./index.js"></script>
   </body>
 </html>
