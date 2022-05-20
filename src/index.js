@@ -6,20 +6,15 @@
  import  photoCardsTpl from './templates/photo-cards.hbs';                  // Подключаем шаблоны
  import imageApiService from './js/searchQueryApi.js';                     // Подключаем компоненты библиотек и привязываем к контексту
 
-
- const searchImageService = new imageApiService ();                         // Создаем экземпляр класса для получения данных от сервера
-const lightbox = new SimpleLightbox('.photo-link',{
-  overlayOpacity: 0.4,
-  animationSpeed: 100,
-});  
-
 const refs = { 
     searchForm: document.querySelector('#search-form'),                    // Получаем элементы страницы
     imgGallery: document.querySelector('#gallery'),                         
     loadMoreBtn: document.querySelector('#load-more'),
     loadSpinner: document.querySelector('#loading-container'),
 };
-        
+    
+ const searchImageService = new imageApiService ();                         // Создаем экземпляр класса для получения данных от сервера
+ const lightbox = new SimpleLightbox('.gallery a');  
 
 refs.searchForm.addEventListener('submit', onSearch);                      // Привязываем обработчики событий
 refs.loadMoreBtn.addEventListener('click', onLoadMore);
@@ -32,6 +27,7 @@ async function onSearch(event) {                                            // �
     clearGallery();                                                         // Очищаем галерею
     const inputValue = event.currentTarget.elements.query.value;            // Получаем значение поля поиска
     searchImageService.query = inputValue;                                  // Присваиваем значение полю поиска значение поля поиска
+    try{
     await searchImageService.fetchImages()                                  // Получаем данные от сервера
         .then(appendImageGalleryMarkup); 
     scrollToTop();                                                              // Прокручиваем страницу в начало
@@ -39,16 +35,20 @@ async function onSearch(event) {                                            // �
     if (searchImageService.totalHits !== 0) {                               // Если данных на сервере нет, то выводим сообщение
         Notify.success(`Hooray! We found ${searchImageService.totalHits} images.`);   // Выводим сообщение
     }
+    } catch (error) {
+       console.log(error);
+    }
 }
 
 async function onLoadMore() {                                                // Асинхронная функция подгрузки изображений
     await searchImageService.fetchImages()                                   // Получаем данные от сервера
         .then(appendImageGalleryMarkup);                                     // Добавляем данные в галерею
-    onSearchHits();                                                 // Проверяем наличие данных на сервере
+    onSearchHits();                                                           // Проверяем наличие данных на сервере
     lightbox.refresh();                                                      // Обновляем окно изображения
     if (searchImageService.totalHits <= searchImageService.getFetchElNum()) {       // Если данных на сервере нет, то выводим сообщение
-        Notify.info(`We're sorry, but you've reached the end of search results.`);     // Выводим сообщение
-        refs.loadMoreBtn.classList.add('is-hidden');                            // Скрываем кнопку подгрузки
+        Notify.info(`We're sorry, but you've reached the end of search results.`);   // Выводим сообщение   
+        refs.loadMoreBtn.classList.add('is-hidden');                                // Скрываем кнопку подгрузки
+        return;                           
     }
 }   
 
@@ -74,7 +74,7 @@ function infiniteScroll() {                                                     
     const documentRect = document
     .documentElement.getBoundingClientRect();                                     // Получаем координаты окна браузера
     if (documentRect.bottom < document
-        .documentElement.clientHeight + 1400) {    // Если координаты окна браузера меньше высоты окна браузера + высота окна браузера, то вызываем функцию подгрузки
+        .documentElement.clientHeight + 1400) {                                 // Если координаты окна браузера меньше высоты окна браузера + высота окна браузера, то вызываем функцию подгрузки
         onLoadMore();                                                            // Вызываем функцию подгрузки
     }
 }

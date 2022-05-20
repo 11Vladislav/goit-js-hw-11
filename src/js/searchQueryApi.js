@@ -21,9 +21,11 @@ export default class imageApiService {                           // Эспорт
         const url = `${URL_API}?${parametrs}`;                     // Собираем полный адрес запроса
         this.incrementPage();                                      // Увеличиваем номер страницы
         const response = await axios.get(url);                     // Отправляем запрос на сервер
-        this.totalHits = response.data.totalHits;                  // Получаем общее количество элементов
-        return response.data.hits;                                 // Возвращаем массив с изображениями
-     
+        this.totalHits = response.data.totalHits;
+        if (!response.data.hits) {                             // Если нет изображений
+            throw new Error('Error');
+        }
+        return response.data.hits;
     }    
 
     getFetchElNum() {                                              // Получаем количество элементов на странице
