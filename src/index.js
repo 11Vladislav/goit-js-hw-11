@@ -7,66 +7,82 @@
  import imageApiService from './js/searchQueryApi.js';                     // Подключаем компоненты библиотек и привязываем к контексту
 
 
-const lightbox = new SimpleLightbox('.gallery a');                         // Создаем окно изображения с помощью библиотеки SimpleLightbox
+ const searchImageService = new imageApiService ();                         // Создаем экземпляр класса для получения данных от сервера
+const lightbox = new SimpleLightbox('.photo-link',{
+  overlayOpacity: 0.4,
+  animationSpeed: 100,
+});  
+
 const refs = { 
     searchForm: document.querySelector('#search-form'),                    // Получаем элементы страницы
     imgGallery: document.querySelector('#gallery'),                         
     loadMoreBtn: document.querySelector('#load-more'),
     loadSpinner: document.querySelector('#loading-container'),
 };
-const searchImageService = new imageApiService ();                         // Создаем экземпляр класса для получения данных от сервера
+        
 
 refs.searchForm.addEventListener('submit', onSearch);                      // Привязываем обработчики событий
 refs.loadMoreBtn.addEventListener('click', onLoadMore);
-window.addEventListener('scroll', throttle(infiniteScroll, 500));                    
+window.addEventListener('scroll', throttle(infiniteScroll, 500));
+                                                                        // Подключаем компоненты библиотек и привязываем к контексту
 
-async function onSearch(event) {                                                
-    event.preventDefault();
-    clearGallery();
-    lightbox.refresh();
-    const inputValue = event.currentTarget.elements.query.value;
-    searchImageService.query = inputValue;
-    await searchImageService.fetchImages()
-        .then(appendImageGalleryMarkup);
-    onSearchHits();
-    if (searchImageService.totalHits !== 0) {
-        Notify.success(`Hooray! We found ${searchImageService.totalHits} images.`);
+async function onSearch(event) {                                            // Асинхронная функция поиска изображений
+    event.preventDefault();                                                // Отменяем действие по умолчанию
+    lightbox.refresh();                                          
+    clearGallery();                                                         // Очищаем галерею
+    const inputValue = event.currentTarget.elements.query.value;            // Получаем значение поля поиска
+    searchImageService.query = inputValue;                                  // Присваиваем значение полю поиска значение поля поиска
+    await searchImageService.fetchImages()                                  // Получаем данные от сервера
+        .then(appendImageGalleryMarkup); 
+    scrollToTop();                                                              // Прокручиваем страницу в начало
+    onSearchHits();                                                         // Проверяем наличие данных на сервере
+    if (searchImageService.totalHits !== 0) {                               // Если данных на сервере нет, то выводим сообщение
+        Notify.success(`Hooray! We found ${searchImageService.totalHits} images.`);   // Выводим сообщение
     }
 }
 
-async function onLoadMore() {
-    await searchImageService.fetchImages()
-        .then(appendImageGalleryMarkup);
-    lightbox.refresh();
-    if (searchImageService.totalHits <= searchImageService.getFetchElNum()) {
-        Notify.info(`We're sorry, but you've reached the end of search results.`);
-        refs.loadMoreBtn.classList.add('is-hidden');
+async function onLoadMore() {                                                // Асинхронная функция подгрузки изображений
+    await searchImageService.fetchImages()                                   // Получаем данные от сервера
+        .then(appendImageGalleryMarkup);                                     // Добавляем данные в галерею
+    onSearchHits();                                                 // Проверяем наличие данных на сервере
+    lightbox.refresh();                                                      // Обновляем окно изображения
+    if (searchImageService.totalHits <= searchImageService.getFetchElNum()) {       // Если данных на сервере нет, то выводим сообщение
+        Notify.info(`We're sorry, but you've reached the end of search results.`);     // Выводим сообщение
+        refs.loadMoreBtn.classList.add('is-hidden');                            // Скрываем кнопку подгрузки
     }
 }   
 
-function appendImageGalleryMarkup(hits) {
-       const markup = photoCardsTpl(hits);
-       refs.imgGallery.insertAdjacentHTML('beforeend', markup);
-       refs.loadMoreBtn.classList.remove('is-hidden');
+function appendImageGalleryMarkup(hits) {                                      // Функция добавления данных в галерею
+       const markup = photoCardsTpl(hits);                                      // Получаем разметку для добавления в галерею
+       refs.imgGallery.insertAdjacentHTML('beforeend', markup);                 // Добавляем данные в галерею
+       refs.loadMoreBtn.classList.remove('is-hidden');                          // Показываем кнопку подгрузки
     }
 
-function clearGallery() {
+function clearGallery() {                                                       // Функция очистки галереи
         refs.imgGallery.innerHTML = '';
     }
 
-function onSearchHits() {
-         
-        if (searchImageService.totalHits === 0) {
-            Notify.failure("Sorry, there are no images matching your search query. Please try again..");
-            refs.loadMoreBtn.classList.add('is-hidden');
-            refs.loadSpinner.classList.add('is-hidden');
+function onSearchHits() {                                                      // Функция проверки наличия данных на сервере
+        if (searchImageService.totalHits === 0) {                              // Если данных на сервере нет, то выводим сообщение
+            Notify.failure("Sorry, there are no images matching your search query. Please try again..");      // Выводим сообщение
+            refs.loadMoreBtn.classList.add('is-hidden');                              // Скрываем кнопку подгрузки
+            refs.loadSpinner.classList.add('is-hidden');                            
         }
-         
     }
 
-function infiniteScroll() {
-    const documentRect = document.documentElement.getBoundingClientRect();
-    if (documentRect.bottom < document.documentElement.clientHeight + 1400) {
-    onLoadMore();
-  }
+function infiniteScroll() {                                                     // Функция бесконечной прокрутки 
+    const documentRect = document
+    .documentElement.getBoundingClientRect();                                     // Получаем координаты окна браузера
+    if (documentRect.bottom < document
+        .documentElement.clientHeight + 1400) {    // Если координаты окна браузера меньше высоты окна браузера + высота окна браузера, то вызываем функцию подгрузки
+        onLoadMore();                                                            // Вызываем функцию подгрузки
+    }
+}
+
+function scrollToTop() {                                                         // Функция прокрутки в начало страницы
+  const { top: cardTop } = refs.imgGallery.getBoundingClientRect();             // Получаем координаты галереи
+  window.scrollBy({                                                              // Прокручиваем окно браузера
+    top: cardTop - 100,                                                          // Координаты галереи - высота окна браузера
+    behavior: 'smooth',                                                          // Скроллим браузер с задержкой
+  });
 }
