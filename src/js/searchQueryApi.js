@@ -18,31 +18,31 @@ export default class imageApiService {                           // Эспорт
             per_page: this.perPage,                                 // Количество элементов на странице
             page: this.page,                                       // Номер страницы
         });
-        const url = `${URL_API}?${parametrs}`;
-        this.incrementPage();
-        const response = await axios.get(url);
-        this.totalHits = response.data.totalHits;
-        return response.data.hits;
+        const url = `${URL_API}?${parametrs}`;                     // Собираем полный адрес запроса
+        this.incrementPage();                                      // Увеличиваем номер страницы
+        const response = await axios.get(url);                     // Отправляем запрос на сервер
+        this.totalHits = response.data.totalHits;                  // Получаем общее количество элементов
+        return response.data.hits;                                 // Возвращаем массив с изображениями
      
     }    
 
-    getFetchElNum() {
-        return this.perPage * (this.page - 1);
+    getFetchElNum() {                                              // Получаем количество элементов на странице
+        return this.perPage * (this.page - 1);                     // Вычисляем номер элемента начиная с нуля
     }
 
-    incrementPage() {
+    incrementPage() {                                              // Увеличиваем номер страницы
         this.page += 1;
     }
 
-    resetPage() {
+    resetPage() {                                                  // Сбрасываем номер страницы
         this.page = 1;
     }
 
-    get query(){
+    get query(){                                                   // Получаем поисковый запрос
         return this.searchQuery;
     }
 
-    set query(newQuery){
+    set query(newQuery){                                           // Устанавливаем поисковый запрос
         this.searchQuery = newQuery;
         this.resetPage();
     }

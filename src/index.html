@@ -1,10 +1,9 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Image search</title>
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
     <link
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/modern-normalize/1.0.0/modern-normalize.min.css"
@@ -16,12 +15,14 @@
     <div class="search-block">
       <form class="search-form" id="search-form">
         <input type="text" name="query" id="searchQuery" autocomplete="off" placeholder="Search images..." />
-        <button type="submit" class="search-btn">Search</button>
+        <button type="submit">
+           <img src="https://img.icons8.com/ios/50/000000/search.png" class="search-icon"/>
+        </button>
       </form>
     </div>
         <div class="gallery" id="gallery"></div>
      <button type="button" class="load-more is-hidden" id="load-more">Load more</button>
-    <div class="loading-container hidden">
+    <div class="loading-container is-hidden" id="loading-container">
       <div class="spinner"></div>
       <div class="spinner-center"></div>
       <div class="loading-text">Loading...</div>
