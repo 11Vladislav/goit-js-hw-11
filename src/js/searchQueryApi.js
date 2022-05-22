@@ -22,14 +22,14 @@ export default class imageApiService {                           // Эспорт
         this.incrementPage();                                      // Увеличиваем номер страницы
         const response = await axios.get(url);                     // Отправляем запрос на сервер
         this.totalHits = response.data.totalHits;
-        if (!response.data.hits) {                             // Если нет изображений
+        if (!response.data.hits) {                                  // Если нет изображений
             throw new Error('Error');
         }
         return response.data.hits;
     }    
 
     getFetchElNum() {                                              // Получаем количество элементов на странице
-        return this.perPage * (this.page - 1);                     // Вычисляем номер элемента начиная с нуля
+        return this.perPage * this.page;                          // Вычисляем номер элемента начиная с нуля
     }
 
     incrementPage() {                                              // Увеличиваем номер страницы

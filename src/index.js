@@ -1,43 +1,45 @@
- import './sass/main.scss';                                                // Подключаем стили
- import throttle from 'lodash.throttle';                                   // Подключаем компоненты библиотек и привязываем к контексту
- import { Notify } from 'notiflix/build/notiflix-notify-aio';               // Подключаем компоненты библиотек и привязываем к контексту 
- import SimpleLightbox from 'simplelightbox';                               // Подключаем компоненты библиотек и привязываем к контексту
+ import './sass/main.scss';                                               
+ import throttle from 'lodash.throttle';                                 
+ import SimpleLightbox from 'simplelightbox';                               
  import 'simplelightbox/dist/simple-lightbox.min.css';
- import  photoCardsTpl from './templates/photo-cards.hbs';                  // Подключаем шаблоны
- import imageApiService from './js/searchQueryApi.js';                     // Подключаем компоненты библиотек и привязываем к контексту
+ import  photoCardsTpl from './templates/photo-cards.hbs';                
+ import imageApiService from './js/searchQueryApi.js';
+ import Notiflix from 'notiflix';              
 
-const refs = { 
-    searchForm: document.querySelector('#search-form'),                    // Получаем элементы страницы
+const refs = {                                                              
+    searchForm: document.querySelector('#search-form'),                     
     imgGallery: document.querySelector('#gallery'),                         
     loadMoreBtn: document.querySelector('#load-more'),
+    loadSpinner: document.querySelector('#loading-container'),
 };
     
- const searchImageService = new imageApiService ();                         // Создаем экземпляр класса для получения данных от сервера
+ const searchImageService = new imageApiService ();                             
  const lightbox = new SimpleLightbox('.gallery a'); 
 
-refs.searchForm.addEventListener('submit', onSearch);                      // Привязываем обработчики событий
+refs.searchForm.addEventListener('submit', onSearch);                      
 refs.loadMoreBtn.addEventListener('click', onLoadMore);
 window.addEventListener('scroll', throttle(infiniteScroll, 500));
-                                                                        // Подключаем компоненты библиотек и привязываем к контексту
+                                                                        
+let bottomReached = false;
 
-async function onSearch(event) {                                            // Асинхронная функция поиска изображений
-    event.preventDefault();                                                // Отменяем действие по умолчанию
+async function onSearch(event) {                                            
+    event.preventDefault();                                                
                                            
-    clearGallery();                                                         // Очищаем галерею
-    const inputValue = event.currentTarget.elements.query.value;            // Получаем значение поля поиска
+    clearGallery();                                                         
+    const inputValue = event.currentTarget.elements.query.value;            
     if (inputValue === '') {
          return;
      }           
-    searchImageService.query = inputValue;                                  // Присваиваем значение полю поиска значение поля поиска
-    searchImageService.resetPage();                                        // Сбрасываем номер страницы
+    searchImageService.query = inputValue;                               
+    searchImageService.resetPage();                                       
     try{
-    await searchImageService.fetchImages()                                  // Получаем данные от сервера
+    await searchImageService.fetchImages()                                 
         .then(appendImageGalleryMarkup); 
-    scrollToTop();                                                              // Прокручиваем страницу в начало
+    scrollToTop();                                                             
     onSearchHits();
-    lightbox.refresh();                                                         // Проверяем наличие данных на сервере
-    if (searchImageService.totalHits !== 0) {                               // Если данных на сервере нет, то выводим сообщение
-        Notify.success(`Hooray! We found ${searchImageService.totalHits} images.`);   // Выводим сообщение
+    lightbox.refresh();                                                        
+    if (searchImageService.totalHits !== 0) {                              
+        Notiflix.Notify.success(`Hooray! We found ${searchImageService.totalHits} images.`);   
     }
     } catch (error) {
        console.log(error);
@@ -45,48 +47,65 @@ async function onSearch(event) {                                            // �
 }
 
 async function onLoadMore() {
-    searchImageService.incrementPage();                                             // Асинхронная функция подгрузки изображений
-    await searchImageService.fetchImages()                                   // Получаем данные от сервера
-        .then(appendImageGalleryMarkup);                                     // Добавляем данные в галерею
-    onSearchHits();                                                           // Проверяем наличие данных на сервере
-    lightbox.refresh();                                                      // Обновляем окно изображения
-    if (searchImageService.totalHits <= searchImageService.getFetchElNum()) {       // Если данных на сервере нет, то выводим сообщение
-        Notify.info(`We're sorry, but you've reached the end of search results.`);   // Выводим сообщение   
-        refs.loadMoreBtn.classList.add('is-hidden');                                // Скрываем кнопку подгрузки
+    if (bottomReached) {
+        hideLoading();
+        return;
+    }
+    hideLoading();
+    searchImageService.incrementPage();                                             
+    await searchImageService.fetchImages()                                   
+        .then(appendImageGalleryMarkup);                                    
+    onSearchHits();                                                                  
+    lightbox.refresh();    
+        showLoading();
+    if (searchImageService.totalHits <= searchImageService.getFetchElNum()) {
+        bottomReached = true;                                                                           
+        Notiflix.Notify.info(`We're sorry, but you've reached the end of search results.`);                                                            
+        hideLoading();
         return;                           
     }
 }   
 
-function appendImageGalleryMarkup(hits) {                                      // Функция добавления данных в галерею
-       const markup = photoCardsTpl(hits);                                      // Получаем разметку для добавления в галерею
-       refs.imgGallery.insertAdjacentHTML('beforeend', markup);                 // Добавляем данные в галерею
-       refs.loadMoreBtn.classList.remove('is-hidden');                          // Показываем кнопку подгрузки
+function appendImageGalleryMarkup(hits) {                                      
+       const markup = photoCardsTpl(hits);                                      
+       refs.imgGallery.insertAdjacentHTML('beforeend', markup);                
+       showLoading();                     
     }
  
-function clearGallery() {                                                       // Функция очистки галереи
+function clearGallery() {                                                      
         refs.imgGallery.innerHTML = '';
     }
 
-function onSearchHits() {                                                      // Функция проверки наличия данных на сервере
-        if (searchImageService.totalHits === 0) {                              // Если данных на сервере нет, то выводим сообщение
-            Notify.failure("Sorry, there are no images matching your search query. Please try again..");      // Выводим сообщение
-            refs.loadMoreBtn.classList.add('is-hidden');                              // Скрываем кнопку подгрузки                          
+function onSearchHits() {                                                     
+        if (searchImageService.totalHits === 0) {                              
+            Notiflix.Notify.failure("Sorry, there are no images matching your search query. Please try again..");      
+            hideLoading();                                                                    
         }
     }
 
-function infiniteScroll() {                                                     // Функция бесконечной прокрутки 
+function infiniteScroll() {                                                     
     const documentRect = document
-    .documentElement.getBoundingClientRect();                                     // Получаем координаты окна браузера
+    .documentElement.getBoundingClientRect();                                     
     if (documentRect.bottom < document
-        .documentElement.clientHeight + 1400) {                                 // Если координаты окна браузера меньше высоты окна браузера + высота окна браузера, то вызываем функцию подгрузки
-        onLoadMore();                                                            // Вызываем функцию подгрузки
+        .documentElement.clientHeight + 1400) {                                
+        onLoadMore();                                                            
     }
 }
 
-function scrollToTop() {                                                         // Функция прокрутки в начало страницы
-  const { top: cardTop } = refs.imgGallery.getBoundingClientRect();             // Получаем координаты галереи
-  window.scrollBy({                                                              // Прокручиваем окно браузера
-    top: cardTop - 100,                                                          // Координаты галереи - высота окна браузера
-    behavior: 'smooth',                                                          // Скроллим браузер с задержкой
+function scrollToTop() {                                                         
+  const { top: cardTop } = refs.imgGallery.getBoundingClientRect();            
+  window.scrollBy({                                                              
+    top: cardTop - 100,                                                          
+    behavior: 'smooth',                                                          
   });
+}
+
+function showLoading(){
+    refs.loadMoreBtn.classList.remove('is-hidden'); 
+    refs.loadSpinner.classList.remove('is-hidden');
+}
+
+function hideLoading(){
+    refs.loadMoreBtn.classList.add('is-hidden');  
+    refs.loadSpinner.classList.add('is-hidden');
 }
