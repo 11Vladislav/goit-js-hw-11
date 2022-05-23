@@ -12,7 +12,11 @@ const refs = {
     loadMoreBtn: document.querySelector('#load-more'),
     loadSpinner: document.querySelector('#loading-container'),
 };
-    
+ 
+Notiflix.Notify.init({
+    timeout: 1500,
+});
+
  const searchImageService = new imageApiService ();                             
  const lightbox = new SimpleLightbox('.gallery a'); 
 
@@ -34,13 +38,14 @@ async function onSearch(event) {
     searchImageService.resetPage();                                       
     try{
     await searchImageService.fetchImages()                                 
-        .then(appendImageGalleryMarkup); 
+            .then(appendImageGalleryMarkup); 
+    if (searchImageService.totalHits !== 0) {                              
+        Notiflix.Notify.success(`Hooray! We found ${searchImageService.totalHits} images.`); 
+    }    
     scrollToTop();                                                             
     onSearchHits();
     lightbox.refresh();                                                        
-    if (searchImageService.totalHits !== 0) {                              
-        Notiflix.Notify.success(`Hooray! We found ${searchImageService.totalHits} images.`);   
-    }
+    
     } catch (error) {
        console.log(error);
     }
