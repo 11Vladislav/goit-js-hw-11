@@ -13,6 +13,8 @@ const refs = {
     loadSpinner: document.querySelector('#loading-container'),
 };
  
+
+
 Notiflix.Notify.init({
     timeout: 1500,
 });
